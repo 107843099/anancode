@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>阿南少儿编程大屏</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        background: #fff7ee;
+        font-family: "微软雅黑", Arial, sans-serif;
+      }
+
+      body {
+        min-height: 100vh;
+      }
+
+      header {
+        background: #ff8500;
+        color: #fff;
+        padding: 20px 0 7px 40px;
+        font-size: 32px;
+        font-weight: bold;
+        letter-spacing: 2px;
+      }
+
+      .main-layout {
+        display: flex;
+        height: calc(100vh - 60px);
+        max-width: 2200px;
+        margin: 0 auto;
+        transition: 0.3s;
+      }
+
+      .left-board {
+        background: #fff;
+        border-radius: 24px;
+        box-shadow: 0 8px 24px #ff850040;
+        margin: 0 0 0 24px;
+        padding: 18px 14px 14px 18px;
+        min-width: 420px;
+        max-width: 560px;
+        width: 440px;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+
+      .left-board h2 {
+        font-size: 24px;
+        color: #ff8500;
+        text-align: center;
+        margin-bottom: 10px;
+        letter-spacing: 1px;
+        font-weight: bold;
+      }
+
+      .board-table-area {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        height: 0;
+      }
+
+      .board-table {
+        width: 100%;
+        font-size: 16px;
+        text-align: center;
+        border-radius: 18px;
+        border-collapse: separate;
+        border-spacing: 0;
+        overflow: hidden;
+        min-width: 530px;
+        box-shadow: 0 2px 16px #ff85001a;
+      }
+
+      .board-table th {
+        background: #fff3e0;
+        color: #ff8500;
+        font-weight: bold;
+        padding: 11px 2px;
+        font-size: 16px;
+        border-bottom: 2px solid #ffd699;
+        letter-spacing: 1px;
+      }
+
+      .board-table td {
+        padding: 9px 2px;
+        font-size: 16px;
+        border-bottom: 1px solid #ffe0b2;
+        transition: background 0.15s;
+        cursor: pointer;
+      }
+
+      .board-table tr:nth-child(even) td {
+        background: #fff9f3;
+      }
+
+      .board-table tr:hover td {
+        background: #fff2e2 !important;
+      }
+
+      .right-charts {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 24px;
+        margin: 0 18px 0 22px;
+        min-width: 0;
+        align-content: center;
+        height: 100%;
+      }
+
+      .chart-card {
+        background: #fff;
+        border-radius: 22px;
+        box-shadow: 0 8px 24px #ff850040;
+        padding: 20px 14px 12px 14px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 0;
+        min-height: 280px;
+        height: 93%;
+      }
+
+      .chart-card h3 {
+        color: #ff8500;
+        font-size: 20px;
+        margin-bottom: 12px;
+        font-weight: bold;
+        text-align: center;
+        letter-spacing: 1px;
+      }
+
+      .echart-box {
+        width: 100%;
+        height: 240px;
+        min-width: 0;
+        flex: 1 1 auto;
+      }
+
+      .board-table-area::-webkit-scrollbar {
+        width: 7px;
+        background: #fff7ee;
+      }
+
+      .board-table-area::-webkit-scrollbar-thumb {
+        background: #ffecbc;
+        border-radius: 6px;
+      }
+
+      .board-table-area::-webkit-scrollbar-thumb:hover {
+        background: #ffd699;
+      }
+
+      .user-detail-view {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        height: 100%;
+        width: 100vw;
+      }
+
+      .user-card {
+        background: #fff;
+        border-radius: 22px;
+        box-shadow: 0 8px 24px #ff850040;
+        padding: 20px 44px 12px 44px;
+        margin: 18px 0 24px 0;
+        display: flex;
+        align-items: center;
+        gap: 38px;
+      }
+
+      .user-info-main {
+        font-size: 28px;
+        color: #ff8500;
+        font-weight: bold;
+      }
+
+      .user-info-sec {
+        font-size: 17px;
+        color: #333;
+        margin-top: 6px;
+      }
+
+      .back-btn {
+        background: #ff8500;
+        color: #fff;
+        font-size: 18px;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 25px;
+        margin-bottom: 18px;
+        cursor: pointer;
+        transition: 0.15s;
+        font-weight: bold;
+      }
+
+      .back-btn:hover {
+        background: #ff5f00;
+      }
+
+      .charts-flex {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 24px;
+        width: 96%;
+        margin: 0 auto;
+        align-content: center;
+      }
+
+      .cur-user {
+        background: linear-gradient(90deg, #ffefcc 70%, #ffb70018);
+        color: #ff5f00;
+        font-weight: bold;
+      }
+
+      .chart-card#user-bar-card {
+        min-height: 340px;
+        padding-top: 28px;
+      }
+
+      /* --- 必做题完成情况区域 --- */
+      .must-section {
+        margin: 30px auto 0 auto;
+        width: 98%;
+        background: #fff7f0;
+        border-radius: 18px;
+        box-shadow: 0 4px 16px #ffd69944;
+        padding: 20px 12px 18px 18px;
+        max-width: 800px;
+      }
+
+      .must-title {
+        font-size: 21px;
+        color: #ff8500;
+        font-weight: bold;
+        margin-bottom: 7px;
+        text-align: left;
+        letter-spacing: 1px;
+      }
+
+      .must-cat {
+        font-size: 17px;
+        color: #ff8500;
+        font-weight: bold;
+        margin: 17px 0 8px 0;
+      }
+
+      .must-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 10px;
+        margin-bottom: 3px;
+      }
+
+      .must-item {
+        font-size: 15px;
+        padding: 3px 12px;
+        border-radius: 12px;
+        background: #eee;
+        color: #bdbdbd;
+        border: 1.3px solid #ececec;
+        transition: background 0.2s, color 0.2s, border 0.2s;
+        margin-bottom: 3px;
+        user-select: none;
+        cursor: default;
+        font-family: Consolas, "微软雅黑", Arial, sans-serif;
+        box-shadow: 0 1px 3px #ffb70011;
+      }
+
+      .must-item.done {
+        background: #c5f8d5;
+        color: #119642;
+        border: 1.5px solid #88e26f;
+        font-weight: bold;
+      }
+
+      .header-flex {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 56px 0 0;
+        /* 这里 40px 就是右侧的距离，可以调大调小 */
+        background: #ff8500;
+        width: 98vw;
+        min-height: 62px;
+      }
+
+      .header-flex header {
+        background: none;
+        color: #fff;
+        font-size: 32px;
+        font-weight: bold;
+        letter-spacing: 2px;
+        padding: 20px 0 7px 40px;
+        box-shadow: none;
+        margin: 0;
+      }
+
+      .search-bar-inner {
+        display: flex;
+        align-items: center;
+        background: #fff;
+        border-radius: 22px;
+        box-shadow: 0 2px 10px #ffbb3230;
+        border: 2px solid #ffbb32;
+        padding: 3px 8px 3px 14px;
+        transition: box-shadow 0.2s, border-color 0.2s;
+        max-width: 350px;
+        width: 38vw;
+        min-width: 140px;
+        margin-left: 16px;
+      }
+
+      .search-bar-inner:focus-within {
+        box-shadow: 0 4px 16px #ff850066;
+        border-color: #ff8500;
+      }
+
+      .search-icon {
+        font-size: 20px;
+        color: #ff8500;
+        margin-right: 7px;
+        margin-top: 2px;
+      }
+
+      .search-bar-inner input {
+        flex: 1 1 auto;
+        border: none;
+        outline: none;
+        background: transparent;
+        font-size: 16px;
+        padding: 8px 4px 8px 2px;
+        color: #ff8500;
+        font-weight: 500;
+        letter-spacing: 1px;
+        border-radius: 0;
+      }
+
+      .search-bar-inner input::placeholder {
+        color: #d2aa60;
+        font-size: 14px;
+      }
+
+      .search-bar-inner button {
+        border: none;
+        background: #ff8500;
+        color: #fff;
+        font-size: 16px;
+        font-weight: bold;
+        padding: 7px 18px;
+        border-radius: 18px;
+        margin-left: 7px;
+        cursor: pointer;
+        transition: background 0.2s, box-shadow 0.2s;
+        box-shadow: 0 2px 8px #ffbb3222;
+      }
+
+      .search-bar-inner button:hover {
+        background: #ff5f00;
+        box-shadow: 0 4px 14px #ffbb3233;
+      }
+
+      @media (max-width: 900px) {
+        .header-flex header {
+          font-size: 20px;
+          padding: 16px 0 6px 16px;
+        }
+
+        .search-bar-inner {
+          max-width: 200px;
+          width: 36vw;
+          min-width: 100px;
+        }
+      }
+
+      @media (max-width: 600px) {
+        .header-flex {
+          flex-direction: column;
+          align-items: stretch;
+          padding: 0;
+          min-height: unset;
+        }
+
+        .header-flex header {
+          font-size: 18px;
+          padding: 12px 0 5px 9px;
+          text-align: left;
+        }
+
+        .search-bar-inner {
+          max-width: 95vw;
+          width: 94vw;
+          margin: 6px auto 2px auto;
+        }
+      }
+
+      @media (max-width: 1100px) {
+        .main-layout {
+          flex-direction: column;
+          height: auto;
+        }
+
+        .right-charts,
+        .charts-flex {
+          grid-template-columns: 1fr;
+          grid-template-rows: repeat(4, 1fr);
+        }
+
+        .right-charts,
+        .charts-flex {
+          gap: 18px;
+        }
+
+        .left-board {
+          width: 99vw;
+          max-width: unset;
+          min-width: unset;
+          margin: 0 0 20px 0;
+        }
+
+        .must-section {
+          padding: 12px 5vw 10px 5vw;
+        }
+      }
+
+      @media (max-width: 700px) {
+        header {
+          font-size: 20px;
+          padding-left: 8px;
+        }
+
+        .left-board h2 {
+          font-size: 16px;
+        }
+
+        .user-card {
+          flex-direction: column;
+          gap: 8px;
+          padding: 10px 6vw;
+        }
+
+        .user-info-main {
+          font-size: 20px;
+        }
+
+        .user-info-sec {
+          font-size: 13px;
+        }
+
+        .charts-flex {
+          width: 100%;
+          gap: 8px;
+        }
+
+        .chart-card#user-bar-card {
+          min-height: 260px;
+          padding-top: 14px;
+        }
+
+        .must-section {
+          max-width: 98vw;
+          font-size: 14px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="header-flex">
+      <header
+        id="mainTitle"
+        style="
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+        "
+      >
+        <span>ANANCODE · 阿南信奥</span>
+        <span
+          style="
+            font-size: 13px;
+            color: #f8f7f7;
+            margin-left: 18px;
+            font-style: italic;
+          "
+          >©2025 Fu</span
+        >
+      </header>
+
+      <div class="search-bar-inner">
+        <span class="search-icon">🔍</span>
+        <input
+          id="stuSearchInput"
+          type="text"
+          placeholder="输入学生姓名，回车或点搜索"
+          autocomplete="off"
+          onkeydown="if(event.key==='Enter'){searchStudent();}"
+        />
+        <button onclick="searchStudent()">搜索</button>
+      </div>
+    </div>
+
+    <div class="main-layout" id="mainView" style="display: none">
+      <div class="left-board">
+        <h2>刷题天梯榜</h2>
+        <div class="board-table-area" id="studentTableArea">
+          <table class="board-table">
+            <thead>
+              <tr>
+                <th>排名</th>
+                <th>姓名</th>
+                <th>总数</th>
+                <th>入门</th>
+                <th>普及-</th>
+                <th>普及/提高-</th>
+                <th>高难度</th>
+              </tr>
+            </thead>
+            <tbody id="student-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="right-charts">
+        <div class="chart-card">
+          <h3>AC题目难度分布饼图</h3>
+          <div id="main-pie" class="echart-box"></div>
+        </div>
+        <div class="chart-card" style="position: relative">
+          <h3>每周进步排行榜</h3>
+          <div
+            id="growth-rank-view"
+            style="
+              width: 100%;
+              min-height: 210px;
+              display: flex;
+              align-items: flex-end;
+              justify-content: center;
+              gap: 38px;
+              margin-top: 12px;
+            "
+          ></div>
+        </div>
+
+        <div class="chart-card">
+          <h3>25年8月赛成绩前8名</h3>
+          <div id="main-bar" class="echart-box"></div>
+        </div>
+        <div class="chart-card">
+          <h3>刷题难度分布对比</h3>
+          <div id="main-radar" class="echart-box"></div>
+        </div>
+      </div>
+    </div>
+    <!-- 个人详情页 -->
+    <div class="user-detail-view" id="userDetailView">
+      <div class="user-card" id="userCard"></div>
+      <div class="charts-flex">
+        <div class="chart-card">
+          <h3>做题难度统计</h3>
+          <div id="user-pie" class="echart-box"></div>
+        </div>
+        <div class="chart-card">
+          <h3>每周做题数增量</h3>
+          <div id="user-line" class="echart-box"></div>
+        </div>
+        <div class="chart-card" id="user-bar-card">
+          <h3 id="user-bar-title">本月月赛分数</h3>
+          <div
+            id="user-bar"
+            class="echart-box"
+            style="height: 280px; max-width: 330px; margin: 0 auto"
+          ></div>
+          <div id="user-bar-info"></div>
+          <!-- 新增：在仪表盘下方加一行 -->
+        </div>
+        <div class="chart-card">
+          <h3>难度分布对比</h3>
+          <div id="user-radar" class="echart-box"></div>
+        </div>
+      </div>
+      <!-- 必做题范畴完成情况展示区（新增） -->
+      <div class="must-section" id="mustSection" style="display: none">
+        <div class="must-title">内容范畴必做题完成情况</div>
+        <div id="mustMapArea"></div>
+      </div>
+    </div>
+
+    <script>
+      const diffList = [
+        { name: "入门", key: "r", color: "#fa6e7e" },
+        { name: "普及-", key: "p", color: "#ffbe32" },
+        { name: "普及/提高-", key: "t", color: "#3ec653" },
+        { name: "高难度", key: "h", color: "#468fdf" },
+      ];
+      // userGrowthFiles: 你维护的最近四周文件名数组，比如
+      const userGrowthFiles = [
+        "data_2025-07-20.json",
+        "data_2025-07-26.json",
+        "data_2025-08-05.json",
+      ];
+
+      // 这个函数会返回 4 个数组，分别是每个难度对应4周的累计数量
+      async function getUserTotalSeries(name) {
+        // 上次每难度的总量（初始化为0）
+        let last = [0, 0, 0, 0];
+        let series = diffList.map(() => []);
+        for (let path of userGrowthFiles) {
+          let data = await loadJSON(path);
+          let user = Object.values(data).find(
+            (d) => (d["备注"] || d["昵称"] || "") === name
+          );
+          if (user && user["难度统计"]) {
+            diffList.forEach((item, i) => {
+              let val = user["难度统计"][item.name]?.["数量"];
+              if (typeof val !== "number") val = last[i];
+              series[i].push(val);
+              last[i] = val;
+            });
+          } else {
+            // 数据缺失时，补上一次
+            last.forEach((v, i) => series[i].push(v));
+          }
+        }
+        return series; // 结构：[ [入门...], [普及-...], ...]
+      }
+
+      // 工具函数：读取本地json
+      function loadJSON(path) {
+        return fetch(path).then((res) => {
+          if (!res.ok) throw new Error("读取失败");
+          return res.json();
+        });
+      }
+
+      // 工具函数：读取本地csv为数组
+      function loadCSV(path) {
+        return fetch(path)
+          .then((res) => {
+            if (!res.ok) throw new Error("读取失败");
+            return res.text();
+          })
+          .then((text) => {
+            let lines = text.trim().split("\n");
+            let header = lines[0].split("\t");
+            if (header.length === 1) header = lines[0].split(",");
+            let arr = [];
+            for (let i = 1; i < lines.length; ++i) {
+              let vals = lines[i].split("\t");
+              if (vals.length === 1) vals = lines[i].split(",");
+              let obj = {};
+              header.forEach(
+                (k, j) => (obj[k.trim()] = (vals[j] || "").trim())
+              );
+              arr.push(obj);
+            }
+            return arr;
+          });
+      }
+
+      // 新增：读取must_map.json（或060b6993-4fbe-40d0-a61a-983001b7f14c.json）
+      function loadMustMap(path = "must_map.json") {
+        return fetch(path).then((res) => {
+          if (!res.ok) throw new Error("必做题清单未找到");
+          return res.json();
+        });
+      }
+
+      // 展示内容范畴必做题完成情况（user：学生对象，mustMap：必做题map）
+      function showMustMap(user, mustMap) {
+        if (!user || !mustMap) return;
+        const area = document.getElementById("mustMapArea");
+        area.innerHTML = "";
+        const doneSet = new Set(user["所有题号"] || []);
+        Object.entries(mustMap).forEach(([cat, ids]) => {
+          const catElem = document.createElement("div");
+          catElem.className = "must-cat";
+          catElem.textContent = cat;
+          area.appendChild(catElem);
+          const list = document.createElement("div");
+          list.className = "must-list";
+          (ids || []).forEach((qid) => {
+            const item = document.createElement("span");
+            item.className = "must-item" + (doneSet.has(qid) ? " done" : "");
+            item.textContent = qid;
+            list.appendChild(item);
+          });
+          area.appendChild(list);
+        });
+        document.getElementById("mustSection").style.display = "";
+      }
+
+      // ==================== 全局数据 ===================
+      let students = [];
+      let studentsRawData = {};
+      let mustMap = null;
+      let monthScores = [];
+
+      // ==================== 页面初始化流程 ===================
+      async function initPage() {
+        try {
+          const data = await loadJSON("data_2025-08-05.json");
+          studentsRawData = data;
+          students = Object.values(data).map((d) => ({
+            name: d["备注"] || d["昵称"] || "",
+            allQids: d["所有题号"] || [],
+            total: d["总题数"] || 0,
+            r: d["难度统计"]?.["入门"]?.["数量"] || 0,
+            p: d["难度统计"]?.["普及-"]?.["数量"] || 0,
+            t: d["难度统计"]?.["普及/提高-"]?.["数量"] || 0,
+            h: d["难度统计"]?.["提高+/省选-"]?.["数量"] || 0,
+            week: d["周增量"] || [0, 0, 0, 0, 0, 0, 0],
+            raw: d,
+          }));
+          students.sort((a, b) => b.total - a.total);
+
+          monthScores = await loadCSV("match_2025_08.csv");
+          students.forEach((stu) => {
+            let row = monthScores.find((row) => row["真实姓名"] === stu.name);
+            stu.y = row ? parseInt(row["总分"]) : 0;
+          });
+
+          window.avgData = (() => {
+            let n = students.length;
+            let sum = {
+              r: 0,
+              p: 0,
+              t: 0,
+              h: 0,
+              total: 0,
+              y: 0,
+              week: [0, 0, 0, 0, 0, 0, 0],
+            };
+            students.forEach((s) => {
+              sum.r += s.r;
+              sum.p += s.p;
+              sum.t += s.t;
+              sum.h += s.h;
+              sum.total += s.total;
+              sum.y += s.y;
+              s.week?.forEach(
+                (w, i) => (sum.week[i] = (sum.week[i] || 0) + (w || 0))
+              );
+            });
+            return {
+              r: Math.round(sum.r / n),
+              p: Math.round(sum.p / n),
+              t: Math.round(sum.t / n),
+              h: Math.round(sum.h / n),
+              total: Math.round(sum.total / n),
+              y: Math.round(sum.y / n),
+              week: sum.week.map((x) => Math.round(x / n)),
+            };
+          })();
+
+          // 加载必做题
+          mustMap = await loadMustMap();
+
+          document.getElementById("mainView").style.display = "";
+          renderBoardTable();
+          showMainCharts();
+          showGrowthRankView();
+          if (location.hash.startsWith("#user=")) {
+            let name = decodeURIComponent(location.hash.slice(6));
+            let idx = students.findIndex((s) => s.name === name);
+            if (idx > -1) showUserDetail(idx);
+            else showMainPage();
+          }
+        } catch (e) {
+          alert("数据文件读取失败：" + e.message);
+        }
+      }
+
+      // ==================== 榜单渲染 ===================
+      function renderBoardTable(curUser) {
+        let html = "";
+        for (let i = 0; i < students.length; i++) {
+          const s = students[i];
+          if (s) {
+            html += `<tr${
+              curUser && curUser === s.name ? ' class="cur-user"' : ""
+            }><td>${i + 1}</td>
+        <td class="user-link" data-idx="${i}">${s.name}</td>
+        <td>${s.total}</td>
+        <td>${s.r}</td>
+        <td>${s.p}</td>
+        <td>${s.t}</td>
+        <td>${s.h}</td>
+      </tr>`;
+          }
+        }
+        document.getElementById("student-table-body").innerHTML = html;
+        Array.from(document.getElementsByClassName("user-link")).forEach(
+          (e) => {
+            e.onclick = () => showUserDetail(parseInt(e.dataset.idx));
+          }
+        );
+      }
+
+      // ==================== 首页四图 ===================
+      function showMainCharts() {
+        let sum = { r: 0, p: 0, t: 0, h: 0 };
+        students.forEach((s) => {
+          sum.r += s.r;
+          sum.p += s.p;
+          sum.t += s.t;
+          sum.h += s.h;
+        });
+        echarts.init(document.getElementById("main-pie")).setOption({
+          tooltip: { trigger: "item" },
+          legend: { bottom: 2 },
+          color: ["#ffb700", "#ffa155", "#ff754a", "#ff4e50"],
+          series: [
+            {
+              name: "难度分布",
+              type: "pie",
+              radius: "60%",
+              data: [
+                { value: sum.r, name: "入门题" },
+                { value: sum.p, name: "普及-" },
+                { value: sum.t, name: "普及/提高-" },
+                { value: sum.h, name: "高难度" },
+              ],
+              label: { fontSize: 15 },
+            },
+          ],
+        });
+        // let weekSum = [0,0,0,0,0,0,0];
+        // students.forEach(s=>s.week?.forEach((w,i)=>weekSum[i]+=w||0));
+        // echarts.init(document.getElementById('main-line')).setOption({
+        //   tooltip: { trigger: 'axis' },
+        //   xAxis: { type: 'category', data: ['第1周','第2周','第3周','第4周','第5周','第6周','第7周'] },
+        //   yAxis: { type: 'value' },
+        //   series: [{
+        //     data: weekSum.map(x=>Math.round(x/students.length)),
+        //     type: 'line',
+        //     name: '平均做题数',
+        //     symbol: 'circle', symbolSize: 12,
+        //     lineStyle: { width: 4, color: '#ff8500' },
+        //     itemStyle: { color: '#ff8500' }
+        //   }]
+        // });
+        let nameField = "真实姓名";
+        let scoreField = "总分";
+        let monthScoresSorted = monthScores
+          .map((row) => ({
+            name: row[nameField],
+            score: parseInt(row[scoreField]),
+          }))
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 8);
+
+        let reversedNames = monthScoresSorted.map((x) => x.name).reverse();
+        let reversedScores = monthScoresSorted.map((x) => x.score).reverse();
+
+        echarts.init(document.getElementById("main-bar")).setOption({
+          grid: { left: 70, right: 30, top: 35, bottom: 15 },
+          xAxis: { type: "value", min: 0 },
+          yAxis: {
+            type: "category",
+            data: reversedNames,
+            axisLabel: { fontSize: 16 },
+          },
+          series: [
+            {
+              type: "bar",
+              data: reversedScores,
+              itemStyle: { borderRadius: [0, 8, 8, 0], color: "#ff8500" },
+              barWidth: 22,
+              label: {
+                show: true,
+                position: "right",
+                fontWeight: "bold",
+                fontSize: 16,
+                color: "#444",
+                formatter: "{c}分",
+              },
+            },
+          ],
+        });
+        echarts.init(document.getElementById("main-radar")).setOption({
+          tooltip: { show: true },
+          legend: {
+            bottom: 7,
+            data: ["班级平均", "最优同学"],
+            textStyle: { fontSize: 15 },
+          },
+          radar: {
+            indicator: [
+              { name: "入门题", max: 60 },
+              { name: "普及-", max: 80 },
+              { name: "普及/提高-", max: 90 },
+              { name: "高难度", max: 40 },
+              { name: "总量", max: 200 },
+            ],
+            radius: 105,
+            center: ["50%", "50%"],
+            splitArea: {
+              areaStyle: {
+                color: [
+                  "rgba(255,133,0,0.12)",
+                  "rgba(255,133,0,0.08)",
+                  "rgba(255,133,0,0.06)",
+                  "rgba(255,133,0,0.04)",
+                  "rgba(255,133,0,0.01)",
+                ],
+              },
+            },
+            splitLine: {
+              lineStyle: { color: "#ff8500", type: "dashed", width: 2 },
+            },
+            axisLine: { lineStyle: { color: "#ff8500", width: 1.2 } },
+            axisName: { color: "#ff8500", fontSize: 15, fontWeight: "bold" },
+          },
+          series: [
+            {
+              name: "班级平均 vs 最优同学",
+              type: "radar",
+              data: [
+                {
+                  value: [
+                    window.avgData.r,
+                    window.avgData.p,
+                    window.avgData.t,
+                    window.avgData.h,
+                    window.avgData.total,
+                  ],
+                  name: "班级平均",
+                  areaStyle: { color: "rgba(255,133,0,0.13)" },
+                },
+                {
+                  value: [
+                    students[0].r,
+                    students[0].p,
+                    students[0].t,
+                    students[0].h,
+                    students[0].total,
+                  ],
+                  name: "最优同学",
+                  areaStyle: { color: "rgba(255,100,0,0.15)" },
+                },
+              ],
+            },
+          ],
+        });
+      }
+      // ========== 每周进步冠亚季君领奖台 ==========
+
+      // 需要用到的两周数据文件
+      const weekDataFiles = ["data_2025-07-26.json", "data_2025-08-05.json"];
+
+      // 1. 读取两周数据为 {姓名: 总题数}
+      async function loadWeekData() {
+        let weeks = [];
+        for (let path of weekDataFiles) {
+          const data = await loadJSON(path);
+          let map = {};
+          Object.values(data).forEach((d) => {
+            const name = d["备注"] || d["昵称"] || "";
+            map[name] = d["总题数"] || 0;
+          });
+          weeks.push(map);
+        }
+        return weeks;
+      }
+
+      // 2. 计算每人增量，按降序排前十
+      async function getTopGrowthRank() {
+        let [last, now] = await loadWeekData();
+        let growth = [];
+        for (let name in now) {
+          let prev = last[name] || 0;
+          let delta = now[name] - prev;
+          growth.push({ name, delta });
+        }
+        growth.sort((a, b) => b.delta - a.delta);
+        return growth.slice(0, 10);
+      }
+
+      // 3. 渲染领奖台
+      async function showGrowthRankView() {
+        const growth = await getTopGrowthRank();
+        if (!growth.length) {
+          document.getElementById("growth-rank-view").innerHTML =
+            '<div style="color:#bbb;text-align:center;">暂无数据</div>';
+          return;
+        }
+        // 领奖台
+        let medals = [
+          '<span style="font-size:38px;">🥇</span>',
+          '<span style="font-size:38px;">🥈</span>',
+          '<span style="font-size:38px;">🥉</span>',
+        ];
+        let color = ["#FFD700", "#BFBFBF", "#DA8A34"]; // 金银铜
+        let podiumH = [124, 88, 68];
+        let marginT = [0, 36, 55];
+
+        let podiumHtml = `
+    <div style="display:flex;align-items:flex-end;justify-content:center;height:170px;gap:38px;margin-bottom:6px;">
+      ${[1, 0, 2]
+        .map((i) => {
+          // 左-中-右
+          let s = growth[i];
+          if (!s) return "";
+          return `
+            <div style="
+              display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+              width:94px;position:relative;margin-top:${marginT[i]}px;">
+              <div style="
+                background:radial-gradient(ellipse at 55% 12%,#fffbe9 75%,${color[i]}44 100%);
+                width:58px;height:${podiumH[i]}px;border-radius:13px 13px 18px 18px/19px 19px 24px 24px;
+                box-shadow:0 9px 20px ${color[i]}33,0 1.5px 0 #eee;
+                display:flex;align-items:flex-end;justify-content:center;
+                border: 2.6px solid #ffeab0; font-size:22px; font-weight:bold;
+                position:relative;">
+                <span style="position:absolute;top:-40px;left:50%;transform:translateX(-50%);font-size:33px;text-shadow:0 4px 12px #fff1b599;">${medals[i]}</span>
+                <span style="position:absolute;bottom:29px;left:50%;transform:translateX(-50%);font-size:23px;color:${color[i]};font-weight:bold;text-shadow:0 1.5px 8px #fff0 60%;">
+                  +${s.delta}
+                </span>
+                <span style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:14px;color:#9d7c29;opacity:.75;">题</span>
+              </div>
+              <div style="font-size:18px;color:#ff8500;font-weight:bold;margin:13px 0 2px 0;text-shadow:0 2px 8px #ffe8ad60;">${s.name}</div>
+            </div>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+
+        // 其他上榜
+        let listHtml = "";
+        if (growth.length > 3) {
+          listHtml = `
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:0 12px;margin-top:12px;">
+        ${growth
+          .slice(3, 10)
+          .map(
+            (s, i) => `
+          <div style="
+            display:flex;align-items:center;gap:8px;
+            background:#faf6e8;
+            border-radius:14px;
+            box-shadow:0 1.5px 7px #ffd67325;
+            padding:5px 14px 4px 10px;
+            font-size:15px;
+            margin-bottom:7px;
+            min-width:135px;
+            ">
+            <span style="font-weight:bold;color:#d49016;font-size:15.5px;width:1.8em;display:inline-block;text-align:right;">${
+              i + 4
+            }.</span>
+            <span style="color:#666;font-weight:bold;margin-right:3px;">${
+              s.name
+            }</span>
+            <span style="color:#119642;font-weight:bold;">+${s.delta}</span>
+            <span style="color:#a08c5a;font-size:13px;">题</span>
+          </div>
+        `
+          )
+          .join("")}
+      </div>
+    `;
+        }
+
+        document.getElementById("growth-rank-view").innerHTML =
+          podiumHtml + listHtml;
+      }
+
+      // ==================== 个人页逻辑 ===================
+      function showUserDetail(idx) {
+        let s = students[idx];
+        document.getElementById("mainView").style.display = "none";
+        document.getElementById("userDetailView").style.display = "flex";
+        // 展示个人卡片信息
+        // 展示个人卡片信息（美化版）
+        document.getElementById("userCard").innerHTML = `
+  <div style="
+    background: linear-gradient(100deg, #fffbe7 70%, #ffe5c6 120%);
+    border: 2.2px solid #ffbb32;
+    box-shadow: 0 6px 32px #ffb70033, 0 1.5px 0 #ffd97b;
+    border-radius: 30px;
+    padding: 36px 38px 28px 38px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 220px;
+    position: relative;
+    margin: 0 auto;
+  ">
+    <!-- 奖牌icon -->
+    <div style="
+      width: 54px; height: 54px;
+      background: radial-gradient(circle at 65% 35%, #ffe88e 55%, #ffd32a 100%);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 18px #ffd32a33, 0 1.5px 0 #ffd32a77;
+      margin-bottom: 18px;
+      font-size: 32px;
+      color: #ffb700;
+      font-weight: bold;
+      letter-spacing: 2px;
+    ">🏅</div>
+    <div class="user-info-main" style="
+      font-size: 28px;
+      color: #ff8500;
+      font-weight: bold;
+      letter-spacing: 1.5px;
+      margin-bottom: 10px;
+      text-shadow: 0 2px 8px #ffbb3222;
+      text-align: center;
+    ">${s.name}</div>
+    <div class="user-info-sec" style="
+      font-size: 19px;
+      color: #ff6d00;
+      margin-bottom: 9px;
+      font-weight: bold;
+      letter-spacing: 1.2px;
+      text-align: center;
+      text-shadow: 0 1px 6px #ffd97b22;
+    ">已完成题目：<span style="color:#00993d; font-size:24px;">${s.total}</span> 道</div>
+    <div style="
+      font-size: 15px;
+      color: #997012;
+      background: linear-gradient(100deg,#ffefbb 60%,#fff7ee 120%);
+      border-radius: 8px;
+      padding: 4px 18px 3px 18px;
+      font-weight: 500;
+      margin-top: 8px;
+      box-shadow: 0 1px 5px #ffd97b11;
+      letter-spacing: 0.5px;
+    ">Keep Coding, Keep Growing!</div>
+  </div>
+`;
+
+        // 图表...
+        echarts.init(document.getElementById("user-pie")).setOption({
+          tooltip: { trigger: "item" },
+          legend: { bottom: 3 },
+          color: ["#ffb700", "#ffa155", "#ff754a", "#ff4e50"],
+          series: [
+            {
+              name: "难度分布",
+              type: "pie",
+              radius: "60%",
+              data: [
+                { value: s.r, name: "入门题" },
+                { value: s.p, name: "普及-" },
+                { value: s.t, name: "普及/提高-" },
+                { value: s.h, name: "高难度" },
+              ],
+              label: { fontSize: 15 },
+            },
+          ],
+        });
+        // 1. 取 userGrowthFiles 的日期作为横坐标标签
+        const dateLabels = userGrowthFiles.map((path) => {
+          const match = path.match(/\d{4}-\d{2}-\d{2}/);
+          if (match) {
+            const [year, month, day] = match[0].split("-");
+            return `${parseInt(month)}/${parseInt(day)}`; // 比如 8/4
+          }
+          return path;
+        });
+
+        // 2. 用 getUserTotalSeries 读取四个难度四周的总量数据
+        getUserTotalSeries(s.name).then((series) => {
+          echarts.init(document.getElementById("user-line")).setOption({
+            tooltip: { trigger: "axis" },
+            legend: {
+              data: diffList.map((d) => d.name),
+              top: 10,
+              textStyle: { fontSize: 15 },
+              itemWidth: 22,
+              itemHeight: 12,
+            },
+            color: diffList.map((d) => d.color),
+            xAxis: {
+              type: "category",
+              data: dateLabels,
+              axisLabel: { fontSize: 15 },
+            },
+            yAxis: { type: "value", minInterval: 1 },
+            series: diffList.map((d, i) => ({
+              name: d.name,
+              data: series[i],
+              type: "line",
+              smooth: true,
+              symbol: "circle",
+              symbolSize: 12,
+              lineStyle: { width: 4, color: d.color },
+              itemStyle: {
+                color: d.color,
+                borderColor: "#fff",
+                borderWidth: 2,
+              },
+            })),
+          });
+        });
+
+        // 1. 找出本月成绩和排名
+        let scoreRows = monthScores
+          .map((row) => ({
+            name: row["真实姓名"],
+            score: parseInt(row["总分"]),
+          }))
+          .filter((row) => !isNaN(row.score))
+          .sort((a, b) => b.score - a.score);
+
+        let myScoreObj = scoreRows.find((row) => row.name === s.name);
+        let myRank = myScoreObj
+          ? scoreRows.findIndex((row) => row.name === s.name) + 1
+          : null;
+        // --- 新增：动态显示分数和排名 ---
+        let monthScore = s.y || 0;
+        let userName = s.name;
+        // 计算排名
+        let monthScoresSorted = monthScores
+          .map((row, i) => ({
+            name: row["真实姓名"],
+            score: parseInt(row["总分"] || "0"),
+          }))
+          .sort((a, b) => b.score - a.score);
+
+        let foundIdx = monthScoresSorted.findIndex(
+          (row) => row.name === userName
+        );
+        let userRank = foundIdx > -1 ? foundIdx + 1 : null;
+
+        let scoreText = "";
+        if (!monthScore || userRank === null) {
+          scoreText =
+            '<span style="font-size:19px;color:#bbb;font-style:italic;font-weight:normal;">未参加本次月赛</span>';
+        } else {
+          scoreText = `<span style="color:#ff8500;font-weight:bold;">本月月赛分数：</span><span style="color:#ff8500;font-size:21px;font-weight:bold;">${monthScore}分</span>   <span style="color:#ff8500;font-weight:bold;">|</span>   <span style="color:#ff8500;font-weight:bold;">排名：</span><span style="color:#ff8500;font-size:21px;font-weight:bold;">第${userRank}名</span>`;
+        }
+        document.getElementById("user-bar-title").innerHTML = scoreText;
+
+        echarts.init(document.getElementById("user-bar")).setOption({
+          series: [
+            {
+              type: "gauge",
+              startAngle: 210,
+              endAngle: -30,
+              min: 0,
+              max: 800,
+              progress: { show: true, width: 16 },
+              axisLine: { lineStyle: { width: 18, color: [[1, "#ff8500"]] } },
+              pointer: { show: true, length: "68%", width: 7 },
+              splitLine: {
+                distance: -20,
+                length: 12,
+                lineStyle: { width: 3, color: "#eee" },
+              },
+              axisTick: {
+                distance: -20,
+                length: 6,
+                lineStyle: { color: "#eee", width: 2 },
+              },
+              axisLabel: { distance: -42, fontSize: 17, color: "#ff8500" },
+              detail: {
+                show: false,
+              },
+
+              data: [{ value: myScoreObj ? myScoreObj.score : 0 }],
+            },
+          ],
+          title: { show: false },
+        });
+        // 动态生成排名/未参加的小字说明
+        let infoHtml = "";
+
+        document.getElementById("user-bar-info").innerHTML = infoHtml;
+
+        echarts.init(document.getElementById("user-radar")).setOption({
+          legend: {
+            bottom: 5,
+            data: ["个人", "班级平均"],
+            textStyle: { fontSize: 15 },
+          },
+          radar: {
+            indicator: [
+              { name: "入门题", max: 60 },
+              { name: "普及-", max: 80 },
+              { name: "普及/提高-", max: 90 },
+              { name: "高难度", max: 40 },
+              { name: "总量", max: 200 },
+            ],
+            radius: 90,
+            center: ["50%", "50%"],
+            splitArea: {
+              areaStyle: {
+                color: [
+                  "rgba(255,133,0,0.12)",
+                  "rgba(255,133,0,0.08)",
+                  "rgba(255,133,0,0.06)",
+                  "rgba(255,133,0,0.04)",
+                  "rgba(255,133,0,0.01)",
+                ],
+              },
+            },
+            splitLine: {
+              lineStyle: { color: "#ff8500", type: "dashed", width: 2 },
+            },
+            axisLine: { lineStyle: { color: "#ff8500", width: 1.2 } },
+            axisName: { color: "#ff8500", fontSize: 15, fontWeight: "bold" },
+          },
+          series: [
+            {
+              type: "radar",
+              data: [
+                {
+                  value: [s.r, s.p, s.t, s.h, s.total],
+                  name: "个人",
+                  areaStyle: { color: "rgba(80,210,120,0.11)" },
+                },
+                {
+                  value: [
+                    window.avgData.r,
+                    window.avgData.p,
+                    window.avgData.t,
+                    window.avgData.h,
+                    window.avgData.total,
+                  ],
+                  name: "班级平均",
+                  areaStyle: { color: "rgba(255,133,0,0.13)" },
+                },
+              ],
+            },
+          ],
+        });
+
+        // 渲染必做题范畴完成情况
+        if (mustMap) {
+          // 找原始 student 对象（因为 students 是排序过的！）
+          let rawUser = Object.values(studentsRawData).find(
+            (d) => (d["备注"] || d["昵称"] || "") === s.name
+          );
+          showMustMap(rawUser, mustMap);
+        } else {
+          document.getElementById("mustSection").style.display = "none";
+        }
+        document.getElementById("backBtn").onclick = function () {
+          document.getElementById("userDetailView").style.display = "none";
+          document.getElementById("mainView").style.display = "";
+          location.hash = "";
+        };
+        location.hash = "#user=" + encodeURIComponent(s.name);
+      }
+
+      // 返回主页面
+      function showMainPage() {
+        document.getElementById("mainView").style.display = "";
+        document.getElementById("userDetailView").style.display = "none";
+        location.hash = "";
+      }
+
+      // 顶部搜索功能
+      function searchStudent() {
+        let val = document.getElementById("stuSearchInput").value.trim();
+        if (!val) {
+          alert("请输入学生姓名！");
+          return;
+        }
+        // 支持模糊/精确（精确优先）
+        let idx = students.findIndex((s) => s.name === val);
+        if (idx === -1) {
+          // 再尝试忽略空格和大小写
+          idx = students.findIndex(
+            (s) =>
+              s.name.replace(/\s/g, "").toLowerCase() ===
+              val.replace(/\s/g, "").toLowerCase()
+          );
+        }
+        if (idx === -1) {
+          // 尝试包含
+          idx = students.findIndex((s) => s.name.includes(val));
+        }
+        if (idx === -1) {
+          alert("没有找到该同学，请核对姓名！");
+          return;
+        }
+        showUserDetail(idx);
+        // 清空搜索框（体验更好）
+        document.getElementById("stuSearchInput").value = "";
+      }
+
+      // 让标题点击时返回主页面
+      document.getElementById("mainTitle").onclick = function () {
+        showMainPage(); // 这个是你原来 js 里的函数，直接复用
+      };
+
+      // 页面初始化
+      initPage();
+    </script>
+  </body>
+</html>
