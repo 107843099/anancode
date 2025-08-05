@@ -275,6 +275,13 @@
         font-family: Consolas, "微软雅黑", Arial, sans-serif;
         box-shadow: 0 1px 3px #ffb70011;
       }
+      .other-item {
+        background: #fff1d7 !important; /* 淡黄色背景 */
+        color: #a98319 !important; /* 深黄色字体 */
+        border: 1.3px solid #ffe4a1 !important;
+        font-weight: 500;
+        box-shadow: 0 1px 4px #ffd18022;
+      }
 
       .must-item.done {
         background: #c5f8d5;
@@ -533,7 +540,7 @@
       </div>
       <div class="right-charts">
         <div class="chart-card">
-          <h3>已通过题目统计</h3>
+          <h3>AC题目难度分布饼图</h3>
           <div id="main-pie" class="echart-box"></div>
         </div>
         <div class="chart-card" style="position: relative">
@@ -557,7 +564,7 @@
           <div id="main-bar" class="echart-box"></div>
         </div>
         <div class="chart-card">
-          <h3>班级难度分布对比</h3>
+          <h3>刷题难度分布对比</h3>
           <div id="main-radar" class="echart-box"></div>
         </div>
       </div>
@@ -591,8 +598,19 @@
       </div>
       <!-- 必做题范畴完成情况展示区（新增） -->
       <div class="must-section" id="mustSection" style="display: none">
-        <div class="must-title">内容范畴必做题完成情况</div>
+        <div class="must-title">阿南洛谷必刷榜单</div>
         <div id="mustMapArea"></div>
+      </div>
+      <!-- 其他做题展示区 -->
+      <div
+        class="must-section"
+        id="otherSection"
+        style="display: none; background: #fffaf3"
+      >
+        <div class="must-title" style="color: #20b27a">
+          学生其他刷题（非榜单内）
+        </div>
+        <div id="otherSolvedArea"></div>
       </div>
     </div>
 
@@ -607,7 +625,7 @@
       const userGrowthFiles = [
         "data_2025-07-20.json",
         "data_2025-07-26.json",
-        "data_2025-08-04.json",
+        "data_2025-08-05.json",
       ];
 
       // 这个函数会返回 4 个数组，分别是每个难度对应4周的累计数量
@@ -700,16 +718,102 @@
         document.getElementById("mustSection").style.display = "";
       }
 
+      function buildQid2diffFromMustMap(mustMap) {
+        let map = {};
+        Object.entries(mustMap).forEach(([diff, qids]) => {
+          (qids || []).forEach((qid) => {
+            map[qid] = diff;
+          });
+        });
+        return map;
+      }
+
+      function showOtherSolved(user, mustMap) {
+        if (!user || !mustMap) return;
+        const area = document.getElementById("otherSolvedArea");
+        area.innerHTML = "";
+
+        // 1. 必做题号集合
+        const mustSet = new Set();
+        Object.values(mustMap).forEach((ids) =>
+          (ids || []).forEach((qid) => mustSet.add(qid))
+        );
+
+        // 2. 学生做过但不在必做题单里的题
+        const extra = (user["所有题号"] || []).filter(
+          (qid) => !mustSet.has(qid)
+        );
+
+        // 3. 如果没有多余题，隐藏
+        if (!extra.length) {
+          document.getElementById("otherSection").style.display = "none";
+          return;
+        }
+
+        // 4. 从“难度统计”构建 题号->难度
+        let qid2diff = {};
+        const diffOrder = [
+          "入门",
+          "普及-",
+          "普及/提高-",
+          "提高+/省选-",
+          "省选/NOI-",
+          "NOI/NOI+/CTSC",
+          "未知",
+        ];
+        if (user["难度统计"]) {
+          Object.entries(user["难度统计"]).forEach(([diff, obj]) => {
+            (obj["题号"] || []).forEach((qid) => {
+              qid2diff[qid] = diff;
+            });
+          });
+        }
+
+        // 5. 分类
+        let diffMap = {};
+        diffOrder.forEach((d) => (diffMap[d] = []));
+        extra.forEach((qid) => {
+          let diff = qid2diff[qid] || "未知";
+          if (!diffMap[diff]) diffMap[diff] = [];
+          diffMap[diff].push(qid);
+        });
+
+        // 6. 展示
+        diffOrder.forEach((diff) => {
+          const qids = diffMap[diff];
+          if (!qids || !qids.length) return;
+          const diffElem = document.createElement("div");
+          diffElem.className = "must-cat";
+          diffElem.style.color = "#1c7e54";
+          diffElem.textContent = diff;
+          area.appendChild(diffElem);
+
+          const list = document.createElement("div");
+          list.className = "must-list";
+          qids.forEach((qid) => {
+            const item = document.createElement("span");
+            item.className = "must-item other-item";
+
+            item.textContent = qid;
+            list.appendChild(item);
+          });
+          area.appendChild(list);
+        });
+
+        document.getElementById("otherSection").style.display = "";
+      }
+
       // ==================== 全局数据 ===================
       let students = [];
       let studentsRawData = {};
       let mustMap = null;
       let monthScores = [];
+      let qid2diff = {};
 
       // ==================== 页面初始化流程 ===================
       async function initPage() {
         try {
-          const data = await loadJSON("data_2025-08-04.json");
+          const data = await loadJSON("data_2025-08-05.json");
           studentsRawData = data;
           students = Object.values(data).map((d) => ({
             name: d["备注"] || d["昵称"] || "",
@@ -765,6 +869,7 @@
 
           // 加载必做题
           mustMap = await loadMustMap();
+          qid2diff = buildQid2diffFromMustMap(mustMap);
 
           document.getElementById("mainView").style.display = "";
           renderBoardTable();
@@ -957,7 +1062,7 @@
       // ========== 每周进步冠亚季君领奖台 ==========
 
       // 需要用到的两周数据文件
-      const weekDataFiles = ["data_2025-07-26.json", "data_2025-08-04.json"];
+      const weekDataFiles = ["data_2025-07-26.json", "data_2025-08-05.json"];
 
       // 1. 读取两周数据为 {姓名: 总题数}
       async function loadWeekData() {
@@ -1206,139 +1311,83 @@
             })),
           });
         });
-        let totalStudents = scoreRows.length;
-        // 1. 找出本月成绩和排名（只保留一次！）
-      // 1. 找出本月成绩和排名
-let scoreRows = monthScores
-  .map(row => ({
-    name: row["真实姓名"],
-    score: parseInt(row["总分"])
-  }))
-  .filter(row => !isNaN(row.score))
-  .sort((a, b) => b.score - a.score);
 
-let myScoreObj = scoreRows.find(row => row.name === s.name);
-let myRank = myScoreObj ? scoreRows.findIndex(row => row.name === s.name) + 1 : null;
+        // 1. 找出本月成绩和排名
+        let scoreRows = monthScores
+          .map((row) => ({
+            name: row["真实姓名"],
+            score: parseInt(row["总分"]),
+          }))
+          .filter((row) => !isNaN(row.score))
+          .sort((a, b) => b.score - a.score);
 
+        let myScoreObj = scoreRows.find((row) => row.name === s.name);
+        let myRank = myScoreObj
+          ? scoreRows.findIndex((row) => row.name === s.name) + 1
+          : null;
+        // --- 新增：动态显示分数和排名 ---
+        let monthScore = s.y || 0;
+        let userName = s.name;
+        // 计算排名
+        let monthScoresSorted = monthScores
+          .map((row, i) => ({
+            name: row["真实姓名"],
+            score: parseInt(row["总分"] || "0"),
+          }))
+          .sort((a, b) => b.score - a.score);
 
-// 2. 计算等级
-let level = "";
-if (!myScoreObj) {
-  level = "未参赛";
-} else if (myRank <= 2) {
-  level = "一等奖";
-} else if (myRank <= 8) {
-  level = "二等奖";
-} else if (myRank <= 20) {
-  level = "三等奖";
-} else {
-  level = "优秀奖";
-}
+        let foundIdx = monthScoresSorted.findIndex(
+          (row) => row.name === userName
+        );
+        let userRank = foundIdx > -1 ? foundIdx + 1 : null;
 
-// 3. 计算等级区间比例（用于仪表盘指针） 0~1
-let levelValue = 0;
-if (!myScoreObj || myRank === null) {
-  levelValue = 0;
-} else if (myRank <= 2) {
-  levelValue = 0.875;
-} else if (myRank <= 8) {
-  levelValue = 0.625;
-} else if (myRank <= 20) {
-  levelValue = 0.375;
-} else {
-  levelValue = 0.125;
-}
+        let scoreText = "";
+        if (!monthScore || userRank === null) {
+          scoreText =
+            '<span style="font-size:19px;color:#bbb;font-style:italic;font-weight:normal;">未参加本次月赛</span>';
+        } else {
+          scoreText = `<span style="color:#ff8500;font-weight:bold;">本月月赛分数：</span><span style="color:#ff8500;font-size:21px;font-weight:bold;">${monthScore}分</span>   <span style="color:#ff8500;font-weight:bold;">|</span>   <span style="color:#ff8500;font-weight:bold;">排名：</span><span style="color:#ff8500;font-size:21px;font-weight:bold;">第${userRank}名</span>`;
+        }
+        document.getElementById("user-bar-title").innerHTML = scoreText;
 
-// 4. 生成文字显示
-let scoreText = "";
-if (!myScoreObj || myRank === null) {
-  scoreText =
-    '<span style="font-size:19px;color:#bbb;font-style:italic;font-weight:normal;">未参加本次月赛</span>';
-} else {
-  scoreText = `<span style="color:#ff8500;font-weight:bold;">等级：</span><span style="color:#ff8500;font-size:21px;font-weight:bold;">${level}</span>   <span style="color:#ff8500;font-weight:bold;">|</span>   <span style="color:#ff8500;font-weight:bold;">排名：</span><span style="color:#ff8500;font-size:21px;font-weight:bold;">第${myRank}名</span>   <span style="color:#ff8500;font-weight:bold;">/ ${totalStudents}人</span>`;
-}
-document.getElementById("user-bar-title").innerHTML = scoreText;
+        echarts.init(document.getElementById("user-bar")).setOption({
+          series: [
+            {
+              type: "gauge",
+              startAngle: 210,
+              endAngle: -30,
+              min: 0,
+              max: 800,
+              progress: { show: true, width: 16 },
+              axisLine: { lineStyle: { width: 18, color: [[1, "#ff8500"]] } },
+              pointer: {
+                show: true,
+                length: "68%",
+                width: 7,
+                itemStyle: {
+                  color: "#FFD700", // 这里设置指针颜色
+                },
+              },
+              splitLine: {
+                distance: -20,
+                length: 12,
+                lineStyle: { width: 3, color: "#eee" },
+              },
+              axisTick: {
+                distance: -20,
+                length: 6,
+                lineStyle: { color: "#eee", width: 2 },
+              },
+              axisLabel: { distance: -42, fontSize: 17, color: "#ff8500" },
+              detail: {
+                show: false,
+              },
 
-// 5. 渲染等级仪表盘
-echarts.init(document.getElementById("user-bar")).setOption({
-  series: [
-    {
-      type: "gauge",
-      startAngle: 180,
-      endAngle: 0,
-      center: ["50%", "72%"],  // 指针略微下沉
-      radius: "94%",
-      min: 0,
-      max: 1,
-      splitNumber: 4,
-      axisLine: {
-        lineStyle: {
-          width: 18,
-          color: [
-            [0.25, "#7CFFB2"],
-            [0.5, "#58D9F9"],
-            [0.75, "#FDDD60"],
-            [1, "#ff8500"]
+              data: [{ value: myScoreObj ? myScoreObj.score : 0 }],
+            },
           ],
-          shadowBlur: 16,
-          shadowColor: "#ff850022"
-        }
-      },
-      pointer: {
-        show: !!myScoreObj, // 未参赛则隐藏指针
-        icon: "path://M-6,-60 L0,-100 L6,-60 Q0,-50 -6,-60",
-        length: "62%",
-        width: 14,
-        offsetCenter: [0, "6%"],
-        itemStyle: {
-          color: "#ff8500",
-          shadowColor: "#ffcf3a66",
-          shadowBlur: 6
-        }
-      },
-      axisTick: {
-        show: false
-      },
-      splitLine: {
-        length: 30,
-        lineStyle: { color: "#fff8e2", width: 4 }
-      },
-      axisLabel: {
-        color: "#ff8500",
-        fontSize: 18,
-        fontWeight: "bold",
-        distance: -56,
-        formatter: function (val) {
-          if (val === 0.875) return "一等奖";
-          if (val === 0.625) return "二等奖";
-          if (val === 0.375) return "三等奖";
-          if (val === 0.125) return "优秀奖";
-          return "";
-        }
-      },
-      anchor: {
-        show: !!myScoreObj,
-        showAbove: true,
-        size: 22,
-        itemStyle: {
-          color: "#fff3cc",
-          borderWidth: 6,
-          borderColor: "#ffcf3a"
-        }
-      },
-      detail: {
-        show: false
-      },
-      data: [
-        {
-          value: myScoreObj ? levelValue : 0
-        }
-      ]
-    }
-  ]
-});
-
-
+          title: { show: false },
+        });
         // 动态生成排名/未参加的小字说明
         let infoHtml = "";
 
@@ -1374,7 +1423,7 @@ echarts.init(document.getElementById("user-bar")).setOption({
             splitLine: {
               lineStyle: { color: "#ff8500", type: "dashed", width: 2 },
             },
-            axisLine: { lineStyle: { color: "#ff8500", width: 1.2 } },
+            axisLine: { lineStyle: { color: "6DE1D2", width: 1.2 } },
             axisName: { color: "#ff8500", fontSize: 15, fontWeight: "bold" },
           },
           series: [
@@ -1409,6 +1458,7 @@ echarts.init(document.getElementById("user-bar")).setOption({
             (d) => (d["备注"] || d["昵称"] || "") === s.name
           );
           showMustMap(rawUser, mustMap);
+          showOtherSolved(rawUser, mustMap);
         } else {
           document.getElementById("mustSection").style.display = "none";
         }

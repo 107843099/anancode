@@ -275,6 +275,13 @@
         font-family: Consolas, "微软雅黑", Arial, sans-serif;
         box-shadow: 0 1px 3px #ffb70011;
       }
+      .other-item {
+        background: #fff1d7 !important; /* 淡黄色背景 */
+        color: #a98319 !important; /* 深黄色字体 */
+        border: 1.3px solid #ffe4a1 !important;
+        font-weight: 500;
+        box-shadow: 0 1px 4px #ffd18022;
+      }
 
       .must-item.done {
         background: #c5f8d5;
@@ -591,8 +598,19 @@
       </div>
       <!-- 必做题范畴完成情况展示区（新增） -->
       <div class="must-section" id="mustSection" style="display: none">
-        <div class="must-title">内容范畴必做题完成情况</div>
+        <div class="must-title">阿南洛谷必刷榜单</div>
         <div id="mustMapArea"></div>
+      </div>
+      <!-- 其他做题展示区 -->
+      <div
+        class="must-section"
+        id="otherSection"
+        style="display: none; background: #fffaf3"
+      >
+        <div class="must-title" style="color: #20b27a">
+          学生其他刷题（非榜单内）
+        </div>
+        <div id="otherSolvedArea"></div>
       </div>
     </div>
 
@@ -700,11 +718,97 @@
         document.getElementById("mustSection").style.display = "";
       }
 
+      function buildQid2diffFromMustMap(mustMap) {
+        let map = {};
+        Object.entries(mustMap).forEach(([diff, qids]) => {
+          (qids || []).forEach((qid) => {
+            map[qid] = diff;
+          });
+        });
+        return map;
+      }
+
+      function showOtherSolved(user, mustMap) {
+        if (!user || !mustMap) return;
+        const area = document.getElementById("otherSolvedArea");
+        area.innerHTML = "";
+
+        // 1. 必做题号集合
+        const mustSet = new Set();
+        Object.values(mustMap).forEach((ids) =>
+          (ids || []).forEach((qid) => mustSet.add(qid))
+        );
+
+        // 2. 学生做过但不在必做题单里的题
+        const extra = (user["所有题号"] || []).filter(
+          (qid) => !mustSet.has(qid)
+        );
+
+        // 3. 如果没有多余题，隐藏
+        if (!extra.length) {
+          document.getElementById("otherSection").style.display = "none";
+          return;
+        }
+
+        // 4. 从“难度统计”构建 题号->难度
+        let qid2diff = {};
+        const diffOrder = [
+          "入门",
+          "普及-",
+          "普及/提高-",
+          "提高+/省选-",
+          "省选/NOI-",
+          "NOI/NOI+/CTSC",
+          "未知",
+        ];
+        if (user["难度统计"]) {
+          Object.entries(user["难度统计"]).forEach(([diff, obj]) => {
+            (obj["题号"] || []).forEach((qid) => {
+              qid2diff[qid] = diff;
+            });
+          });
+        }
+
+        // 5. 分类
+        let diffMap = {};
+        diffOrder.forEach((d) => (diffMap[d] = []));
+        extra.forEach((qid) => {
+          let diff = qid2diff[qid] || "未知";
+          if (!diffMap[diff]) diffMap[diff] = [];
+          diffMap[diff].push(qid);
+        });
+
+        // 6. 展示
+        diffOrder.forEach((diff) => {
+          const qids = diffMap[diff];
+          if (!qids || !qids.length) return;
+          const diffElem = document.createElement("div");
+          diffElem.className = "must-cat";
+          diffElem.style.color = "#1c7e54";
+          diffElem.textContent = diff;
+          area.appendChild(diffElem);
+
+          const list = document.createElement("div");
+          list.className = "must-list";
+          qids.forEach((qid) => {
+            const item = document.createElement("span");
+            item.className = "must-item other-item";
+
+            item.textContent = qid;
+            list.appendChild(item);
+          });
+          area.appendChild(list);
+        });
+
+        document.getElementById("otherSection").style.display = "";
+      }
+
       // ==================== 全局数据 ===================
       let students = [];
       let studentsRawData = {};
       let mustMap = null;
       let monthScores = [];
+      let qid2diff = {};
 
       // ==================== 页面初始化流程 ===================
       async function initPage() {
@@ -765,6 +869,7 @@
 
           // 加载必做题
           mustMap = await loadMustMap();
+          qid2diff = buildQid2diffFromMustMap(mustMap);
 
           document.getElementById("mainView").style.display = "";
           renderBoardTable();
@@ -835,21 +940,7 @@
             },
           ],
         });
-        // let weekSum = [0,0,0,0,0,0,0];
-        // students.forEach(s=>s.week?.forEach((w,i)=>weekSum[i]+=w||0));
-        // echarts.init(document.getElementById('main-line')).setOption({
-        //   tooltip: { trigger: 'axis' },
-        //   xAxis: { type: 'category', data: ['第1周','第2周','第3周','第4周','第5周','第6周','第7周'] },
-        //   yAxis: { type: 'value' },
-        //   series: [{
-        //     data: weekSum.map(x=>Math.round(x/students.length)),
-        //     type: 'line',
-        //     name: '平均做题数',
-        //     symbol: 'circle', symbolSize: 12,
-        //     lineStyle: { width: 4, color: '#ff8500' },
-        //     itemStyle: { color: '#ff8500' }
-        //   }]
-        // });
+
         let nameField = "真实姓名";
         let scoreField = "总分";
         let monthScoresSorted = monthScores
@@ -1255,7 +1346,14 @@
               max: 800,
               progress: { show: true, width: 16 },
               axisLine: { lineStyle: { width: 18, color: [[1, "#ff8500"]] } },
-              pointer: { show: true, length: "68%", width: 7 },
+              pointer: {
+                show: true,
+                length: "68%",
+                width: 7,
+                itemStyle: {
+                  color: "#FFD700", // 这里设置指针颜色
+                },
+              },
               splitLine: {
                 distance: -20,
                 length: 12,
@@ -1311,7 +1409,7 @@
             splitLine: {
               lineStyle: { color: "#ff8500", type: "dashed", width: 2 },
             },
-            axisLine: { lineStyle: { color: "#ff8500", width: 1.2 } },
+            axisLine: { lineStyle: { color: "6DE1D2", width: 1.2 } },
             axisName: { color: "#ff8500", fontSize: 15, fontWeight: "bold" },
           },
           series: [
@@ -1346,6 +1444,7 @@
             (d) => (d["备注"] || d["昵称"] || "") === s.name
           );
           showMustMap(rawUser, mustMap);
+          showOtherSolved(rawUser, mustMap);
         } else {
           document.getElementById("mustSection").style.display = "none";
         }
